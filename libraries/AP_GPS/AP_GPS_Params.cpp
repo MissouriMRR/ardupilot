@@ -113,6 +113,24 @@ const AP_Param::GroupInfo AP_GPS::Params::var_info[] = {
     AP_GROUPINFO("CAN_OVRIDE", 9, AP_GPS::Params, override_node_id, 0),
 #endif
 
+    // @Param: LAT_OFS
+    // @DisplayName: GPS latitude offset
+    // @Description: A constant offset added to the latitude reported by this GPS.
+    // @Units: deg
+    // @Range: -0.01 0.01
+    // @Increment: 0.0000001
+    // @User: Advanced
+    AP_GROUPINFO("LAT_OFS", 10, AP_GPS::Params, lat_offset_deg, 0),
+
+    // @Param: LNG_OFS
+    // @DisplayName: GPS longitude offset
+    // @Description: A constant offset added to the longitude reported by this GPS. 
+    // @Units: deg
+    // @Range: -0.01 0.01
+    // @Increment: 0.0000001
+    // @User: Advanced
+    AP_GROUPINFO("LNG_OFS", 11, AP_GPS::Params, lng_offset_deg, 0),
+
     AP_GROUPEND
 };
 

@@ -857,6 +857,27 @@ bool AP_GPS::should_log() const
 
 
 /*
+  apply the GPSx_LAT_OFS/GPSx_LNG_OFS constant position offset to an instance.
+  state[instance].location must hold the raw fix reported by the driver
+ */
+void AP_GPS::apply_position_offset(uint8_t instance)
+{
+    if (state[instance].status == AP_GPS::GPS_Status::NO_GPS || state[instance].status == AP_GPS::GPS_Status::NO_FIX) {
+        // no position to offset
+        return;
+    }
+    const float lat_ofs_deg = params[instance].lat_offset_deg; // pull LAT_OFS
+    const float lng_ofs_deg = params[instance].lng_offset_deg; // pull LNG_OFS
+    if (is_zero(lat_ofs_deg) && is_zero(lng_ofs_deg)) {
+        // no offset to apply
+        return;
+    }
+    Location &loc = state[instance].location; // get GPS's current location
+    loc.lat = Location::limit_lattitude(loc.lat + int32_t(lroundf(lat_ofs_deg * 1.0e7f))); // apply LAT_OFS offset
+    loc.lng = Location::wrap_longitude(int64_t(loc.lng) + lroundf(lng_ofs_deg * 1.0e7f)); // apply LNG_OFS offset
+}
+
+/*
   update one GPS instance. This should be called at 10Hz or greater
  */
 void AP_GPS::update_instance(uint8_t instance)
@@ -888,6 +909,10 @@ void AP_GPS::update_instance(uint8_t instance)
     if (_auto_config >= GPS_AUTO_CONFIG_ENABLE_SERIAL_ONLY) {
         send_blob_update(instance);
     }
+
+    // hand the driver back the raw location, do this in case driver
+    // responds differently to read() based on current location
+    state[instance].location = _raw_location[instance];
 
     // we have an active driver for this instance
     bool result = drivers[instance]->read();
@@ -947,6 +972,10 @@ void AP_GPS::update_instance(uint8_t instance)
 
         data_should_be_logged = true;
     }
+
+    // stash the raw fix and apply the constant position offset from LAT_OFS and LNG_OFS
+    _raw_location[instance] = state[instance].location;
+    apply_position_offset(instance);
 
 #if GPS_MAX_RECEIVERS > 1
     if (drivers[instance] && type == GPS_TYPE_UBLOX_RTK_BASE) {

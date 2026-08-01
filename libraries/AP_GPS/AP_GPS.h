@@ -130,6 +130,8 @@ public:
         AP_Vector3f antenna_offset;
         AP_Int16 delay_ms;
         AP_Int8  com_port;
+        AP_Float lat_offset_deg;
+        AP_Float lng_offset_deg;
 #if HAL_ENABLE_DRONECAN_DRIVERS
         AP_Int32 node_id;
         AP_Int32 override_node_id;
@@ -672,6 +674,11 @@ private:
     AP_GPS_Backend *drivers[GPS_MAX_INSTANCES];
     AP_HAL::UARTDriver *_port[GPS_MAX_RECEIVERS];
 
+    /// Last raw location as reported by the driver, before offsets are applied. 
+    /// Cached so that the offset can be re-applied from the raw location
+    /// on every update rather than accumulating
+    Location _raw_location[GPS_MAX_RECEIVERS];
+    
     /// primary GPS instance
     uint8_t primary_instance;
 
@@ -722,6 +729,9 @@ private:
     AP_GPS_Backend *_detect_instance(uint8_t instance);
 
     void update_instance(uint8_t instance);
+
+    // apply the GPSx_LAT_OFS/GPSx_LNG_OFS constant position offset to an instance. 
+    void apply_position_offset(uint8_t instance);
 
     /*
       buffer for re-assembling RTCM data for GPS injection.
